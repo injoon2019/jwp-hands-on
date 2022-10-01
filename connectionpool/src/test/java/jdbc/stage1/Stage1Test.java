@@ -2,6 +2,7 @@ package jdbc.stage1;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.h2.jdbc.JdbcConnection;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,7 @@ class Stage1Test {
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
-        final JdbcConnectionPool jdbcConnectionPool = null;
+        final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
         try (final var connection = jdbcConnectionPool.getConnection()) {
@@ -61,9 +62,16 @@ class Stage1Test {
     @Test
     void testHikariCP() {
         final var hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(H2_URL);
+        hikariConfig.setUsername(USER);
+        hikariConfig.setPassword(PASSWORD);
 
         final var dataSource = new HikariDataSource(hikariConfig);
+        dataSource.setMaximumPoolSize(5);
         final var properties = dataSource.getDataSourceProperties();
+        properties.setProperty("cachePrepStmts", "true");
+        properties.setProperty("prepStmtCacheSize", "250");
+        properties.setProperty("prepStmtCacheSqlLimit", "2048");
 
         assertThat(dataSource.getMaximumPoolSize()).isEqualTo(5);
         assertThat(properties.getProperty("cachePrepStmts")).isEqualTo("true");
